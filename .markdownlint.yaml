@@ -1,0 +1,15 @@
+---
+# Default state for all rules
+default: true
+
+# Path to configuration file to extend
+extends: null
+
+# Authorize inline html
+MD033: false
+
+# Remove first line should be a title header
+MD041: false
+
+# Remove max line length
+MD013: false
