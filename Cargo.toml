@@ -1,6 +1,6 @@
 [package]
 name = "advent_of_code"
-version = "0.9.2"
+version = "0.1.0"
 authors = ["Thibault Cheneviere <thibault.cheneviere@telecomnancy.net>"]
 edition = "2021"
 default-run = "advent_of_code"
