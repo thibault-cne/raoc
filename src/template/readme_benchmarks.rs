@@ -81,7 +81,7 @@ fn construct_table(prefix: &str, timings: Vec<Timings>, total_millis: f64) -> St
     }
 
     lines.push(String::new());
-    lines.push(format!("**Total: {total_millis:.2}ms**"));
+    lines.push(format!("**Total: {total_millis:.2}ms**\n"));
     lines.push(MARKER.into());
 
     lines.join("\n")

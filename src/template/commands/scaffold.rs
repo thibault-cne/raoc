@@ -19,16 +19,17 @@ pub fn part_two(input: &str) -> Option<u32> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    advent_of_code::part!();
 
     #[test]
     fn test_part_one() {
-        let result = part_one(&advent_of_code::template::read_file("examples", DAY));
+        let result = part_one(&advent_of_code::template::read_example(DAY, PART_ONE));
         assert_eq!(result, None);
     }
 
     #[test]
     fn test_part_two() {
-        let result = part_two(&advent_of_code::template::read_file("examples", DAY));
+        let result = part_two(&advent_of_code::template::read_example(DAY, PART_TWO));
         assert_eq!(result, None);
     }
 }
@@ -44,7 +45,8 @@ fn create_file(path: &str) -> Result<File, std::io::Error> {
 
 pub fn handle(day: Day) {
     let input_path = format!("data/inputs/{day}.txt");
-    let example_path = format!("data/examples/{day}.txt");
+    let example_path_part_one = format!("data/examples/{day}-1.txt");
+    let example_path_part_two = format!("data/examples/{day}-2.txt");
     let module_path = format!("src/bin/{day}.rs");
 
     let mut file = match safe_create_file(&module_path) {
@@ -79,9 +81,19 @@ pub fn handle(day: Day) {
         }
     }
 
-    match create_file(&example_path) {
+    match create_file(&example_path_part_one) {
         Ok(_) => {
-            println!("Created empty example file \"{}\"", &example_path);
+            println!("Created empty example file \"{}\"", &example_path_part_one);
+        }
+        Err(e) => {
+            eprintln!("Failed to create example file: {e}");
+            process::exit(1);
+        }
+    }
+
+    match create_file(&example_path_part_two) {
+        Ok(_) => {
+            println!("Created empty example file \"{}\"", &example_path_part_two);
         }
         Err(e) => {
             eprintln!("Failed to create example file: {e}");
