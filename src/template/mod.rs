@@ -35,6 +35,9 @@ macro_rules! solution {
         /// The current day.
         const DAY: advent_of_code::Day = advent_of_code::day!($day);
 
+        #[global_allocator]
+        static ALLOC: dhat::Alloc = dhat::Alloc;
+
         fn main() {
             use advent_of_code::template::runner::*;
             let input = advent_of_code::template::read_file("inputs", DAY);

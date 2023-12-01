@@ -1,21 +1,42 @@
-/// Encapsulates code that interacts with solution functions.
-use crate::template::{aoc_cli, ANSI_ITALIC, ANSI_RESET};
-use crate::Day;
 use std::fmt::Display;
 use std::io::{stdout, Write};
 use std::process::Output;
 use std::time::{Duration, Instant};
 use std::{cmp, env, process};
 
+use dhat;
+
+/// Encapsulates code that interacts with solution functions.
+use crate::template::{aoc_cli, ANSI_ITALIC, ANSI_RESET};
+use crate::Day;
+
 use super::ANSI_BOLD;
+
+struct RunResult<T> {
+    result: T,
+    duration: Duration,
+    time_samples: u128,
+    bytes: usize,
+}
 
 pub fn run_part<I: Clone, T: Display>(func: impl Fn(I) -> Option<T>, input: I, day: Day, part: u8) {
     let part_str = format!("Part {part}");
 
-    let (result, duration, samples) =
-        run_timed(func, input, |result| print_result(result, &part_str, ""));
+    let RunResult {
+        result,
+        duration,
+        time_samples,
+        bytes,
+    } = run(&func, input.clone(), |result| {
+        print_result(result, &part_str, "", "")
+    });
 
-    print_result(&result, &part_str, &format_duration(&duration, samples));
+    print_result(
+        &result,
+        &part_str,
+        &format_duration(&duration, time_samples),
+        &format_bytes(bytes),
+    );
 
     if let Some(result) = result {
         submit_result(result, day, part);
@@ -25,24 +46,40 @@ pub fn run_part<I: Clone, T: Display>(func: impl Fn(I) -> Option<T>, input: I, d
 /// Run a solution part. The behavior differs depending on whether we are running a release or debug build:
 ///  1. in debug, the function is executed once.
 ///  2. in release, the function is benched (approx. 1 second of execution time or 10 samples, whatever take longer.)
-fn run_timed<I: Clone, T>(
-    func: impl Fn(I) -> T,
-    input: I,
-    hook: impl Fn(&T),
-) -> (T, Duration, u128) {
+fn run<I: Clone, T>(func: impl Fn(I) -> T, input: I, hook: impl Fn(&T)) -> RunResult<T> {
     let timer = Instant::now();
-    let result = func(input.clone());
+    let _ = func(input.clone());
     let base_time = timer.elapsed();
+
+    let profiler = dhat::Profiler::new_heap();
+    let result = func(input.clone());
+    let bytes = dhat::HeapStats::get().max_bytes;
+    drop(profiler);
 
     hook(&result);
 
-    let run = if std::env::args().any(|x| x == "--time") {
-        bench(func, input, &base_time)
+    let time_bench = if std::env::args().any(|x| x == "--time") {
+        bench(&func, input.clone(), &base_time)
     } else {
         (base_time, 1)
     };
 
-    (result, run.0, run.1)
+    RunResult {
+        result,
+        duration: time_bench.0,
+        time_samples: time_bench.1,
+        bytes,
+    }
+}
+
+fn format_bytes(bytes: usize) -> String {
+    if bytes < 1024 {
+        format!("({bytes}B)")
+    } else if bytes < 1024 * 1024 {
+        format!("({bytes:.1}KB)")
+    } else {
+        format!("({bytes:.1}MB)")
+    }
 }
 
 fn bench<I: Clone, T>(func: impl Fn(I) -> T, input: I, base_time: &Duration) -> (Duration, u128) {
@@ -52,7 +89,7 @@ fn bench<I: Clone, T>(func: impl Fn(I) -> T, input: I, base_time: &Duration) -> 
     let _ = stdout.flush();
 
     let bench_iterations = cmp::min(
-        10000,
+        10_000,
         cmp::max(
             Duration::from_secs(1).as_nanos() / cmp::max(base_time.as_nanos(), 10),
             10,
@@ -92,13 +129,13 @@ fn format_duration(duration: &Duration, samples: u128) -> String {
     }
 }
 
-fn print_result<T: Display>(result: &Option<T>, part: &str, duration_str: &str) {
+fn print_result<T: Display>(result: &Option<T>, part: &str, duration_str: &str, bytes_str: &str) {
     let is_intermediate_result = duration_str.is_empty();
 
     match result {
         Some(result) => {
             if result.to_string().contains('\n') {
-                let str = format!("{part}: ▼ {duration_str}");
+                let str = format!("{part}: ▼ {duration_str} {bytes_str}");
                 if is_intermediate_result {
                     print!("{str}");
                 } else {
@@ -107,7 +144,8 @@ fn print_result<T: Display>(result: &Option<T>, part: &str, duration_str: &str) 
                     println!("{result}");
                 }
             } else {
-                let str = format!("{part}: {ANSI_BOLD}{result}{ANSI_RESET}{duration_str}");
+                let str =
+                    format!("{part}: {ANSI_BOLD}{result}{ANSI_RESET}{duration_str} {bytes_str}");
                 if is_intermediate_result {
                     print!("{str}");
                 } else {

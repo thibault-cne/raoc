@@ -1,13 +1,13 @@
 use std::io;
 
 use crate::template::{
-    readme_benchmarks::{self, Timings},
+    readme_benchmarks::{self, Benchmark},
     ANSI_BOLD, ANSI_ITALIC, ANSI_RESET,
 };
 use crate::{all_days, Day};
 
 pub fn handle(is_release: bool, is_timed: bool) {
-    let mut timings: Vec<Timings> = vec![];
+    let mut benchmarks: Vec<Benchmark> = vec![];
 
     all_days().for_each(|day| {
         if day > 1 {
@@ -22,22 +22,27 @@ pub fn handle(is_release: bool, is_timed: bool) {
         if output.is_empty() {
             println!("Not solved.");
         } else {
-            let val = child_commands::parse_exec_time(&output, day);
-            timings.push(val);
+            let val = child_commands::parse_exec_bench(&output, day);
+            benchmarks.push(val);
         }
     });
 
     if is_timed {
-        let total_millis = timings.iter().map(|x| x.total_nanos).sum::<f64>() / 1_000_000_f64;
+        let total_millis = benchmarks.iter().map(|x| x.total_nanos).sum::<f64>() / 1_000_000_f64;
 
         println!("\n{ANSI_BOLD}Total:{ANSI_RESET} {ANSI_ITALIC}{total_millis:.2}ms{ANSI_RESET}");
+    }
 
-        if is_release {
-            match readme_benchmarks::update(timings, total_millis) {
-                Ok(()) => println!("Successfully updated README with benchmarks."),
-                Err(_) => {
-                    eprintln!("Failed to update readme with benchmarks.");
-                }
+    if is_release {
+        println!();
+
+        let total_millis = benchmarks.iter().map(|x| x.total_nanos).sum::<f64>() / 1_000_000_f64;
+        match readme_benchmarks::update(benchmarks, total_millis) {
+            Ok(()) => {
+                println!("{ANSI_ITALIC}Successfully updated README with benchmarks.{ANSI_RESET}")
+            }
+            Err(_) => {
+                eprintln!("Failed to update readme with benchmarks.");
             }
         }
     }
@@ -125,8 +130,8 @@ mod child_commands {
         Ok(output)
     }
 
-    pub fn parse_exec_time(output: &[String], day: Day) -> super::Timings {
-        let mut timings = super::Timings {
+    pub fn parse_exec_bench(output: &[String], day: Day) -> super::Benchmark {
+        let mut bench = super::Benchmark {
             day,
             part_1: None,
             part_2: None,
@@ -136,8 +141,14 @@ mod child_commands {
         output
             .iter()
             .filter_map(|l| {
-                if !l.contains(" samples)") {
+                let part = l.split(':').next()?;
+                let Some(heap_allocation) = parse_heap_allocation(l) else {
+                    eprintln!("Could not parse heap allocation from line: {l}");
                     return None;
+                };
+
+                if !l.contains(" samples)") {
+                    return Some((part, "", 0_f64, heap_allocation));
                 }
 
                 let Some((timing_str, nanos)) = parse_time(l) else {
@@ -145,20 +156,19 @@ mod child_commands {
                     return None;
                 };
 
-                let part = l.split(':').next()?;
-                Some((part, timing_str, nanos))
+                Some((part, timing_str, nanos, heap_allocation))
             })
-            .for_each(|(part, timing_str, nanos)| {
+            .for_each(|(part, timing_str, nanos, heap_allocation)| {
                 if part.contains("Part 1") {
-                    timings.part_1 = Some(timing_str.into());
+                    bench.part_1 = Some((timing_str.into(), heap_allocation.into()));
                 } else if part.contains("Part 2") {
-                    timings.part_2 = Some(timing_str.into());
+                    bench.part_2 = Some((timing_str.into(), heap_allocation.into()));
                 }
 
-                timings.total_nanos += nanos;
+                bench.total_nanos += nanos;
             });
 
-        timings
+        bench
     }
 
     fn parse_to_float(s: &str, postfix: &str) -> Option<f64> {
@@ -186,7 +196,16 @@ mod child_commands {
         Some((str_timing, parsed_timing))
     }
 
+    fn parse_heap_allocation(line: &str) -> Option<&str> {
+        let str_heap_allocation = line.split(") (").last()?.split(')').next()?.trim();
+
+        str_heap_allocation.find('B')?;
+
+        Some(str_heap_allocation)
+    }
+
     /// copied from: https://github.com/rust-lang/rust/blob/1.64.0/library/std/src/macros.rs#L328-L333
+    #[cfg(test)]
     #[cfg(feature = "test_lib")]
     macro_rules! assert_approx_eq {
         ($a:expr, $b:expr) => {{
@@ -200,45 +219,46 @@ mod child_commands {
         }};
     }
 
+    #[cfg(test)]
     #[cfg(feature = "test_lib")]
     mod tests {
-        use super::parse_exec_time;
+        use super::parse_exec_bench;
 
         use crate::day;
 
         #[test]
         fn test_well_formed() {
-            let res = parse_exec_time(
+            let res = parse_exec_bench(
                 &[
-                    "Part 1: 0 (74.13ns @ 100000 samples)".into(),
-                    "Part 2: 10 (74.13ms @ 99999 samples)".into(),
+                    "Part 1: 0 (74.13ns @ 100000 samples) (10KB)".into(),
+                    "Part 2: 10 (74.13ms @ 99999 samples) (10KB)".into(),
                     "".into(),
                 ],
                 day!(1),
             );
             assert_approx_eq!(res.total_nanos, 74130074.13_f64);
-            assert_eq!(res.part_1.unwrap(), "74.13ns");
-            assert_eq!(res.part_2.unwrap(), "74.13ms");
+            assert_eq!(res.part_1.unwrap(), ("74.13ns".into(), "10KB".into()));
+            assert_eq!(res.part_2.unwrap(), ("74.13ms".into(), "10KB".into()));
         }
 
         #[test]
         fn test_patterns_in_input() {
-            let res = parse_exec_time(
+            let res = parse_exec_bench(
                 &[
-                    "Part 1: @ @ @ ( ) ms (2s @ 5 samples)".into(),
-                    "Part 2: 10s (100ms @ 1 samples)".into(),
+                    "Part 1: @ @ @ ( ) ms (2s @ 5 samples) (10B)".into(),
+                    "Part 2: 10s (100ms @ 1 samples) (10B)".into(),
                     "".into(),
                 ],
                 day!(1),
             );
             assert_approx_eq!(res.total_nanos, 2100000000_f64);
-            assert_eq!(res.part_1.unwrap(), "2s");
-            assert_eq!(res.part_2.unwrap(), "100ms");
+            assert_eq!(res.part_1.unwrap(), ("2s".into(), "10B".into()));
+            assert_eq!(res.part_2.unwrap(), ("100ms".into(), "10B".into()));
         }
 
         #[test]
         fn test_missing_parts() {
-            let res = parse_exec_time(
+            let res = parse_exec_bench(
                 &[
                     "Part 1: ✖        ".into(),
                     "Part 2: ✖        ".into(),
