@@ -81,8 +81,8 @@ cargo solve <day>
 # output:
 #     Finished dev [unoptimized + debuginfo] target(s) in 0.13s
 #     Running `target/debug/01`
-# Part 1: 42 (166.0ns)
-# Part 2: 42 (41.0ns)
+# Part 1: 42 (166.0ns) (10 KiB)
+# Part 2: 42 (41.0ns) (6 KB)
 ```
 
 The `solve` command runs your solution against real puzzle inputs. To run an optimized build of your code, append the `--release` flag as with any other rust program.
@@ -108,8 +108,8 @@ cargo all
 # ----------
 # | Day 01 |
 # ----------
-# Part 1: 42 (19.0ns)
-# Part 2: 42 (19.0ns)
+# Part 1: 42 (19.0ns) (10 KiB)
+# Part 2: 42 (19.0ns) (10 KiB)
 # <...other days...>
 # Total: 0.20ms
 ```
@@ -193,13 +193,6 @@ Go to the _Variables_ tab in your repository settings and create the following v
 ### Check code formatting / clippy lints in CI
 
 Uncomment the respective sections in the `ci.yml` workflow.
-
-### Use VS Code to debug your code
-
-1. Install [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer) and [CodeLLDB](https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb).
-2. Set breakpoints in your code. [^3]
-3. Click _Debug_ next to the unit test or the _main_ function. [^4]
-4. The debugger will halt your program at the specific line and allow you to inspect the local stack. [^5]
 
 ## Useful crates
 
