@@ -16,6 +16,7 @@ pub fn part_two(input: &str) -> Option<u32> {
     None
 }
 
+#[cfg(not(feature = "test_lib"))]
 #[cfg(test)]
 mod tests {
     use super::*;

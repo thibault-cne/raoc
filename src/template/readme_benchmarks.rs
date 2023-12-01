@@ -70,7 +70,6 @@ fn construct_table(prefix: &str, benchmarks: Vec<Benchmark>, total_millis: f64) 
     ];
 
     for bench in benchmarks {
-        println!("{:?}", bench);
         let path = get_path_for_bin(bench.day);
         let (p1_time, p1_bytes) = bench.part_1.unwrap_or_else(|| ("-".into(), "-".into()));
         let (p2_time, p2_bytes) = bench.part_2.unwrap_or_else(|| ("-".into(), "-".into()));
