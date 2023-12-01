@@ -13,3 +13,5 @@ MD041: false
 
 # Remove max line length
 MD013: false
+
+MD036: false
