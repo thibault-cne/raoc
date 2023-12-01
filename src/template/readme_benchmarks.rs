@@ -75,7 +75,7 @@ fn construct_table(prefix: &str, benchmarks: Vec<Benchmark>, total_millis: f64) 
         let (p2_time, p2_bytes) = bench.part_2.unwrap_or_else(|| ("-".into(), "-".into()));
 
         lines.push(format!(
-            "| [Day {}]({}) | `{}` `{}` | `{}` `{}` |",
+            "| [Day {}]({}) | `{}` / `{}` | `{}` / `{}` |",
             bench.day.into_inner(),
             path,
             p1_time,
@@ -117,20 +117,20 @@ mod tests {
         vec![
             Benchmark {
                 day: day!(1),
-                part_1: Some(("10ms".into(), "10B".into())),
-                part_2: Some(("20ms".into(), "20B".into())),
+                part_1: Some(("10ms".into(), "10 B".into())),
+                part_2: Some(("20ms".into(), "20 B".into())),
                 total_nanos: 3e+10,
             },
             Benchmark {
                 day: day!(2),
-                part_1: Some(("30ms".into(), "30B".into())),
-                part_2: Some(("40ms".into(), "40B".into())),
+                part_1: Some(("30ms".into(), "30 B".into())),
+                part_2: Some(("40ms".into(), "40 B".into())),
                 total_nanos: 7e+10,
             },
             Benchmark {
                 day: day!(4),
-                part_1: Some(("40ms".into(), "40B".into())),
-                part_2: Some(("50ms".into(), "50B".into())),
+                part_1: Some(("40ms".into(), "40 B".into())),
+                part_2: Some(("50ms".into(), "50 B".into())),
                 total_nanos: 9e+10,
             },
         ]
@@ -178,9 +178,9 @@ mod tests {
             "",
             "| Day | Part 1 | Part 2 |",
             "| :---: | :---: | :---:  |",
-            "| [Day 1](./src/bin/01.rs) | `10ms` `10B` | `20ms` `20B` |",
-            "| [Day 2](./src/bin/02.rs) | `30ms` `30B` | `40ms` `40B` |",
-            "| [Day 4](./src/bin/04.rs) | `40ms` `40B` | `50ms` `50B` |",
+            "| [Day 1](./src/bin/01.rs) | `10ms` / `10 B` | `20ms` / `20 B` |",
+            "| [Day 2](./src/bin/02.rs) | `30ms` / `30 B` | `40ms` / `40 B` |",
+            "| [Day 4](./src/bin/04.rs) | `40ms` / `40 B` | `50ms` / `50 B` |",
             "",
             "**Total time: 190.00ms**",
             "",

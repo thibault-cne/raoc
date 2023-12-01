@@ -16,7 +16,7 @@ struct RunResult<T> {
     result: T,
     duration: Duration,
     time_samples: u128,
-    bytes: usize,
+    bytes: u64,
 }
 
 pub fn run_part<I: Clone, T: Display>(func: impl Fn(I) -> Option<T>, input: I, day: Day, part: u8) {
@@ -53,7 +53,7 @@ fn run<I: Clone, T>(func: impl Fn(I) -> T, input: I, hook: impl Fn(&T)) -> RunRe
 
     let profiler = dhat::Profiler::new_heap();
     let result = func(input.clone());
-    let bytes = dhat::HeapStats::get().max_bytes;
+    let bytes = dhat::HeapStats::get().max_bytes.try_into().unwrap();
     drop(profiler);
 
     hook(&result);
@@ -72,14 +72,9 @@ fn run<I: Clone, T>(func: impl Fn(I) -> T, input: I, hook: impl Fn(&T)) -> RunRe
     }
 }
 
-fn format_bytes(bytes: usize) -> String {
-    if bytes < 1024 {
-        format!("({bytes}B)")
-    } else if bytes < 1024 * 1024 {
-        format!("({bytes:.1}KB)")
-    } else {
-        format!("({bytes:.1}MB)")
-    }
+fn format_bytes(bytes: u64) -> String {
+    let byte = byte_unit::Byte::from_u64(bytes);
+    format!("({byte:#.1})")
 }
 
 fn bench<I: Clone, T>(func: impl Fn(I) -> T, input: I, base_time: &Duration) -> (Duration, u128) {

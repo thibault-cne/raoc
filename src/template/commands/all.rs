@@ -198,8 +198,7 @@ mod child_commands {
 
     fn parse_heap_allocation(line: &str) -> Option<&str> {
         let str_heap_allocation = line.split(") (").last()?.split(')').next()?.trim();
-
-        str_heap_allocation.find('B')?;
+        byte_unit::Byte::parse_str(str_heap_allocation, true).ok()?;
 
         Some(str_heap_allocation)
     }
